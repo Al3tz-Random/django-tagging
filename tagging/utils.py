@@ -13,6 +13,23 @@ from django.utils.translation import ugettext as _
 LOGARITHMIC, LINEAR = 1, 2
 
 
+def get_default_manager(model):
+    """
+    Get `_default_manager` property
+    in Django>=1.10, property _default_manager not exist.
+
+    Args:
+        model (django.db.models.Model): Description
+
+    Returns:
+        TYPE: django.db.models.Manager
+    """
+    try:
+        return model._default_manager
+    except AttributeError:
+        return type(model)._default_manager
+
+
 def parse_tag_input(input):
     """
     Parses tag input, with multiple word input being activated and

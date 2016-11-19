@@ -2,7 +2,7 @@
 Generic components for tagging.
 """
 from django.contrib.contenttypes.models import ContentType
-
+from tagging.utils import get_default_manager
 
 def fetch_content_objects(tagged_items, select_related_for=None):
     """
@@ -28,14 +28,14 @@ def fetch_content_objects(tagged_items, select_related_for=None):
         objects.setdefault(item.content_type_id, []).append(item.object_id)
 
     # Retrieve content types and content objects in bulk
-    content_types = ContentType._default_manager.in_bulk(objects.keys())
+    content_types = get_default_manager(ContentType).in_bulk(objects.keys())
     for content_type_pk, object_pks in objects.iteritems():
         model = content_types[content_type_pk].model_class()
         if content_types[content_type_pk].model in select_related_for:
-            objects[content_type_pk] = model._default_manager.select_related(
+            objects[content_type_pk] = get_default_manager(model).select_related(
                 ).in_bulk(object_pks)
         else:
-            objects[content_type_pk] = model._default_manager.in_bulk(
+            objects[content_type_pk] = get_default_manager(model).in_bulk(
                 object_pks)
 
     # Set content types and content objects in the appropriate cache

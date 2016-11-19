@@ -15,6 +15,7 @@ from tagging.utils import get_tag_list
 from tagging.utils import calculate_cloud
 from tagging.utils import parse_tag_input
 from tagging.utils import get_queryset_and_model
+from tagging.utils import get_default_manager
 
 
 qn = connection.ops.quote_name
@@ -41,7 +42,7 @@ class TagManager(models.Manager):
         tags_for_removal = [tag for tag in current_tags
                             if tag.name not in updated_tag_names]
         if len(tags_for_removal):
-            TaggedItem._default_manager.filter(
+            get_default_manager(TaggedItem).filter(
                 content_type__pk=ctype.pk,
                 object_id=obj.pk,
                 tag__in=tags_for_removal).delete()
@@ -50,7 +51,7 @@ class TagManager(models.Manager):
         for tag_name in updated_tag_names:
             if tag_name not in current_tag_names:
                 tag, created = self.get_or_create(name=tag_name)
-                TaggedItem._default_manager.create(tag=tag, object=obj)
+                get_default_manager(TaggedItem).create(tag=tag, object=obj)
 
     def add_tag(self, obj, tag_name):
         """
@@ -68,7 +69,7 @@ class TagManager(models.Manager):
             tag_name = tag_name.lower()
         tag, created = self.get_or_create(name=tag_name)
         ctype = ContentType.objects.get_for_model(obj)
-        TaggedItem._default_manager.get_or_create(
+        get_default_manager(TaggedItem).get_or_create(
             tag=tag, content_type=ctype, object_id=obj.pk)
 
     def get_for_object(self, obj):
@@ -151,7 +152,7 @@ class TagManager(models.Manager):
         if filters is None:
             filters = {}
 
-        queryset = model._default_manager.filter()
+        queryset = get_default_manager(model).filter()
         for f in filters.items():
             queryset.query.add_filter(f)
         usage = self.usage_for_queryset(queryset, counts, min_count)
@@ -299,7 +300,7 @@ class TaggedItemManager(models.Manager):
         if tag_count == 0:
             # No existing tags were given
             queryset, model = get_queryset_and_model(queryset_or_model)
-            return model._default_manager.none()
+            return get_default_manager(model).none()
         elif tag_count == 1:
             # Optimisation for single tag - fall through to the simpler
             # query below.
@@ -333,7 +334,7 @@ class TaggedItemManager(models.Manager):
         queryset, model = get_queryset_and_model(queryset_or_model)
 
         if not tag_count:
-            return model._default_manager.none()
+            return get_default_manager(model).none()
 
         model_table = qn(model._meta.db_table)
         # This query selects the ids of all objects which have all the
@@ -360,7 +361,7 @@ class TaggedItemManager(models.Manager):
         if len(object_ids) > 0:
             return queryset.filter(pk__in=object_ids)
         else:
-            return model._default_manager.none()
+            return get_default_manager(model).none()
 
     def get_union_by_model(self, queryset_or_model, tags):
         """
@@ -372,7 +373,7 @@ class TaggedItemManager(models.Manager):
         queryset, model = get_queryset_and_model(queryset_or_model)
 
         if not tag_count:
-            return model._default_manager.none()
+            return get_default_manager(model).none()
 
         model_table = qn(model._meta.db_table)
         # This query selects the ids of all objects which have any of
@@ -397,7 +398,7 @@ class TaggedItemManager(models.Manager):
         if len(object_ids) > 0:
             return queryset.filter(pk__in=object_ids)
         else:
-            return model._default_manager.none()
+            return get_default_manager(model).none()
 
     def get_related(self, obj, queryset_or_model, num=None):
         """
