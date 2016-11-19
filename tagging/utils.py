@@ -13,6 +13,23 @@ from django.utils.translation import ugettext as _
 LOGARITHMIC, LINEAR = 1, 2
 
 
+def get_default_manager(model):
+    """
+    Get `_default_manager` property
+    in Django>=1.10, property _default_manager not exist.
+
+    Args:
+        model (django.db.models.Model): Description
+
+    Returns:
+        TYPE: django.db.models.Manager
+    """
+    try:
+        return model._default_manager
+    except AttributeError:
+        return type(model)._default_manager
+
+
 def parse_tag_input(input):
     """
     Parses tag input, with multiple word input being activated and
@@ -143,7 +160,7 @@ def get_queryset_and_model(queryset_or_model):
     try:
         return queryset_or_model, queryset_or_model.model
     except AttributeError:
-        return queryset_or_model._default_manager.all(), queryset_or_model
+        return get_default_manager(queryset_or_model).all(), queryset_or_model
 
 
 def get_tag_list(tags):
